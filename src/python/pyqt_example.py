@@ -196,13 +196,6 @@ class my_top_block(gr.top_block):
         # This can now be manipulated as a PyQt4.QtGui.QWidget
         self.pyWin = sip.wrapinstance(pyQt, QtGui.QWidget)
 
-
-        #self.snk1.set_trace_colour(64,192,192)
-        #self.snk1.set_bg_colour(32,32,64)
-        #self.snk1.set_use_rf_frequencies(True)
-
-        
-
         self.connect(src1, (src,0))
         self.connect(src2, (src,1))
         self.connect(src,  channel, thr, self.snk1)
