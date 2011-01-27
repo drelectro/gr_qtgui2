@@ -243,7 +243,7 @@ hardcode_into_libs=yes
 sys_lib_search_path_spec="/usr/lib/gcc/x86_64-linux-gnu/4.4.3 /usr/lib /lib /usr/lib/x86_64-linux-gnu"
 
 # Run-time system search path for libraries.
-sys_lib_dlsearch_path_spec="/lib /usr/lib /usr/lib/nvidia-current /usr/lib32/nvidia-current /usr/lib/alsa-lib /usr/local/lib /lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu /usr/local/cuda/lib64 /usr/local/cuda/lib /usr/local/lib/libuhd.so /usr/local/lib /usr/local/lib/python2.6/dist-packages/gnuradio/uhd "
+sys_lib_dlsearch_path_spec="/lib /usr/lib /usr/lib/nvidia-current /usr/lib32/nvidia-current /usr/lib/alsa-lib /usr/local/lib /lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu /usr/local/cuda/lib64 /usr/local/cuda/lib /usr/local/lib/libuhd.so /usr/local/lib /usr/local/lib/python2.6/dist-packages/gnuradio/uhd /usr/local/qwt-5.2.1/lib "
 
 # Whether dlopen is supported.
 dlopen_support=unknown

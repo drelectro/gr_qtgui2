@@ -83,7 +83,7 @@ SpectrumGUIClass::OpenSpectrumWindow(QWidget* parent,
     }
     
     // Called from the Event Thread
-    _spectrumDisplayWidget = new SpectrumDisplayWidget(use_openGL, parent);
+    _spectrumDisplayWidget = new SpectrumDisplayWidget(use_openGL, showform, parent);
 
     
     // Toggle Windows on/off
@@ -465,31 +465,6 @@ SpectrumGUIClass::SetUpdateTime(double t)
 {
   _updateTime = t;
   _spectrumDisplayWidget->SetUpdateTime(_updateTime);
-}
-
-//MJC
-void
-SpectrumGUIClass::SetTraceColour (QColor c)
-{
-  _spectrumDisplayWidget->SetTraceColour(c);
-}
-
-void 
-SpectrumGUIClass::SetBGColour (QColor c)
-{
-  _spectrumDisplayWidget->SetBGColour(c);
-}
-
-void
-SpectrumGUIClass::ShowCFMarker (bool show)
-{
-  _spectrumDisplayWidget->ShowCFMarker(show);
-}
-
-void 
-SpectrumGUIClass::SetUseRFFrequencies (bool userff)
-{
-  _spectrumDisplayWidget->SetUseRFFrequencies(userff);
 }
 
 #endif /* SPECTRUM_GUI_CLASS_CPP */

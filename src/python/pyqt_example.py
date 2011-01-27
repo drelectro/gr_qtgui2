@@ -6,32 +6,65 @@ from PyQt4 import QtGui, QtCore
 import sys, sip
 
 class dialog_box(QtGui.QWidget):
-    def __init__(self, display, control):
+    def __init__(self, grQtGui, control):
         QtGui.QWidget.__init__(self, None)
         self.setWindowTitle('PyQt Test GUI')
 
         self.boxlayout = QtGui.QBoxLayout(QtGui.QBoxLayout.LeftToRight, self)
-        self.boxlayout.addWidget(display, 1)
+        self.boxlayout.addWidget(grQtGui, 1)
         self.boxlayout.addWidget(control)
 
-        self.resize(800, 500)
+        self.resize(1000, 700)
 
-        self.connect(display, QtCore.SIGNAL("plotPointSelected(QPointF)"), 
-                    control.plot_dblclicked)
+		# Catch Signal from gr_qtgui to application when the plot area is double clicked
+        self.connect(grQtGui, QtCore.SIGNAL("plotPointSelected(QPointF, int)"), 
+                self.plot_dblclicked)
 
-    def plot_dblclicked(self,  point):
-        #print "bbplot_dblclicked"
+        # Connect signals from control_box to gr_qtgui
+        # I.E. control the behaviour of the gr_qtgui from the parent application
+        #
+        self.connect(control.enCF, QtCore.SIGNAL("toggled(bool)"),
+                grQtGui, QtCore.SLOT("ShowCFMarker(bool)"))
+
+        self.connect(control.enFreq, QtCore.SIGNAL("toggled(bool)"),
+                grQtGui, QtCore.SLOT("ToggleTabFrequency(bool)"))
+
+        self.connect(control.enWFall, QtCore.SIGNAL("toggled(bool)"),
+                grQtGui, QtCore.SLOT("ToggleTabWaterfall(bool)"))
+
+        self.connect(control.enTime, QtCore.SIGNAL("toggled(bool)"),
+                grQtGui, QtCore.SLOT("ToggleTabTime(bool)"))
+
+        self.connect(control.enConst, QtCore.SIGNAL("toggled(bool)"),
+                grQtGui, QtCore.SLOT("ToggleTabConstellation(bool)"))
+
+        self.connect(control.enMaxHold, QtCore.SIGNAL("toggled(bool)"),
+                grQtGui, QtCore.SLOT("MaxHoldCheckBox_toggled(bool)"))
+
+        # Connect to the gr_qtgui setItemColor slot
+        self.connect(self, QtCore.SIGNAL("setPlotItemColor(int, QColor)"),
+                grQtGui, QtCore.SLOT("setPlotItemColor(int, QColor)"))
+
+        self.emit(QtCore.SIGNAL("setPlotItemColor(int, QColor)"), 1, QtGui.QColor(32,32,64))
+        self.emit(QtCore.SIGNAL("setPlotItemColor(int, QColor)"), 2, QtGui.QColor(64,192,192))
+    
+
+
+    def plot_dblclicked(self,  point, ptype):
         
-        freq = point.x() * 1000000
-        ampl = point.y()
+        X = point.x()
+        Y = point.y()
         
-        print "Freq = ",  freq
-        print "Ampl = ",  ampl
+        print "Type = ",  ptype
+        print "X = ",  X
+        print "Y = ",  Y
 
 class control_box(QtGui.QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, sink, parent=None):
         QtGui.QWidget.__init__(self, parent)
         self.setWindowTitle('Control Panel')
+
+        self.sink = sink
 
         self.setToolTip('Control the signals')
         QtGui.QToolTip.setFont(QtGui.QFont('OldEnglish', 10))
@@ -49,7 +82,6 @@ class control_box(QtGui.QWidget):
         self.connect(self.amp1Edit, QtCore.SIGNAL("editingFinished()"),
                      self.amp1EditText)
 
-
         # Control the second signal
         self.freq2Edit = QtGui.QLineEdit(self)
         self.layout.addRow("Signal 2 Frequency:", self.freq2Edit)
@@ -61,7 +93,31 @@ class control_box(QtGui.QWidget):
         self.layout.addRow("Signal 2 Amplitude:", self.amp2Edit)
         self.connect(self.amp2Edit, QtCore.SIGNAL("editingFinished()"),
                      self.amp2EditText)
+       
+		# UI control elements
+        self.enFreq = QtGui.QCheckBox(self)
+        self.enFreq.setChecked(True)
+        self.layout.addRow("Enable Frequency Plot:", self.enFreq)
+       
 
+        self.enWFall = QtGui.QCheckBox(self)
+        self.enWFall.setChecked(True)
+        self.layout.addRow("Enable Waterfall Plot:", self.enWFall)
+
+        self.enTime = QtGui.QCheckBox(self)
+        self.enTime.setChecked(True)
+        self.layout.addRow("Enable Time Domain Plot:", self.enTime)
+
+        self.enConst = QtGui.QCheckBox(self)
+        self.enConst.setChecked(True)
+        self.layout.addRow("Enable Constellation Plot:", self.enConst)
+
+        self.enCF = QtGui.QCheckBox(self)
+        self.layout.addRow("Show CF Marker:", self.enCF)
+
+        self.enMaxHold = QtGui.QCheckBox(self)
+        self.layout.addRow("Frequency Max Hold:", self.enMaxHold)
+        	
         self.quit = QtGui.QPushButton('Close', self)
         self.layout.addWidget(self.quit)
 
@@ -77,6 +133,7 @@ class control_box(QtGui.QWidget):
         self.signal2 = signal
         self.freq2Edit.setText(QtCore.QString("%1").arg(self.signal2.frequency()))
         self.amp2Edit.setText(QtCore.QString("%1").arg(self.signal2.amplitude()))
+
 
     def freq1EditText(self):
         try:
@@ -107,15 +164,6 @@ class control_box(QtGui.QWidget):
         except ValueError:
             print "Bad amplitude value entered"
 
-    def plot_dblclicked(self,  point):
-        #print "bbplot_dblclicked"
-        
-        freq = point.x() * 1000000
-        ampl = point.y()
-        
-        print "Freq = ",  freq
-        print "Ampl = ",  ampl
-
 
 class my_top_block(gr.top_block):
     def __init__(self):
@@ -134,29 +182,36 @@ class my_top_block(gr.top_block):
         src  = gr.add_cc()
         channel = gr.channel_model(0.001)
         thr = gr.throttle(gr.sizeof_gr_complex, 100*fftsize)
+
         self.snk1 = qtgui2.sink_c(fftsize, gr.firdes.WIN_BLACKMAN_hARRIS,
                                  0, Rs,
                                  "Complex Signal Example",
-                                 True, True, False, True, False)
+                                True, True, False, True, True, True, True)
+                                #True, False, False, False, False, True, False)
+								#fft , wfall, 3dwf , time , const, oGL , formui
 
-        self.snk1.set_trace_colour(64,192,192)
-        self.snk1.set_bg_colour(32,32,64)
+        # Get the reference pointer to the SpectrumDisplayForm QWidget
+        pyQt  = self.snk1.pyqwidget()
+        # Wrap the pointer as a PyQt SIP object
+        # This can now be manipulated as a PyQt4.QtGui.QWidget
+        self.pyWin = sip.wrapinstance(pyQt, QtGui.QWidget)
+
+
+        #self.snk1.set_trace_colour(64,192,192)
+        #self.snk1.set_bg_colour(32,32,64)
         #self.snk1.set_use_rf_frequencies(True)
+
+        
 
         self.connect(src1, (src,0))
         self.connect(src2, (src,1))
         self.connect(src,  channel, thr, self.snk1)
 
-        self.ctrl_win = control_box()
+        self.ctrl_win = control_box(self.snk1)
         self.ctrl_win.attach_signal1(src1)
         self.ctrl_win.attach_signal2(src2)
 
-        # Get the reference pointer to the SpectrumDisplayForm QWidget
-        pyQt  = self.snk1.pyqwidget()
-
-        # Wrap the pointer as a PyQt SIP object
-        # This can now be manipulated as a PyQt4.QtGui.QWidget
-        self.pyWin = sip.wrapinstance(pyQt, QtGui.QWidget)
+        
 
         self.main_box = dialog_box(self.pyWin, self.ctrl_win)
 

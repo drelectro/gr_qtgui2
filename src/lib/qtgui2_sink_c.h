@@ -70,7 +70,7 @@ private:
 
   // use opengl to force OpenGL on or off
   // this might be necessary for sessions over SSH
-  void initialize(const bool opengl=true);
+  void initialize(const bool opengl=true, const bool showform=true);
 
   int d_fftsize;
   gr_firdes::win_type d_wintype;
@@ -126,11 +126,6 @@ public:
 		    gr_vector_const_void_star &input_items,
 		    gr_vector_void_star &output_items);
 
-  //MJC
-  void set_trace_colour(const unsigned char r, const unsigned char g, const unsigned char b);
-  void set_bg_colour(const unsigned char r, const unsigned char g, const unsigned char b);
-  void set_use_rf_frequencies(bool userff);
-  void set_show_cf_marker(bool show);
 };
 
 #endif /* INCLUDED_QTGUI2_SINK_C_H */

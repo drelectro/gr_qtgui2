@@ -49,7 +49,7 @@ private:
 					      bool plotwaterfall3d, bool plottime,
 					      bool plotconst,
 					      bool use_openGL,
-						  bool showform,
+                                              bool showform,
 					      QWidget *parent);
   qtgui2_sink_c (int fftsize, int wintype,
 		double fc, double bw,
@@ -73,11 +73,6 @@ public:
   void set_frequency_axis(double min, double max);
   void set_constellation_pen_size(int size);
 
-  //MJC
-  void set_trace_colour(const unsigned char r, const unsigned char g, const unsigned char b);
-  void set_bg_colour(const unsigned char r, const unsigned char g, const unsigned char b);
-  void set_use_rf_frequencies(bool userff); 
-  void set_show_cf_marker(bool show);
 };
 
 

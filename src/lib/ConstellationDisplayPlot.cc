@@ -77,6 +77,7 @@ ConstellationDisplayPlot::ConstellationDisplayPlot(QWidget* parent)
   replot();
 
   _zoomer = new ConstellationDisplayZoomer(canvas());
+  _zoomer->setSelectionFlags(QwtPicker::RectSelection | QwtPicker::DragSelection);
 #if QT_VERSION < 0x040000
   _zoomer->setMousePattern(QwtEventPattern::MouseSelect2,
 			  Qt::RightButton, Qt::ControlModifier);
@@ -101,6 +102,11 @@ ConstellationDisplayPlot::ConstellationDisplayPlot(QWidget* parent)
   const QColor c(Qt::darkRed);
   _zoomer->setRubberBandPen(c);
   _zoomer->setTrackerPen(c);
+
+  // emit the position of clicks on widget
+  _picker = new QwtDblClickPlotPicker(canvas());
+  connect(_picker, SIGNAL(selected(const QwtDoublePoint &)),
+          this, SLOT(OnPickerPointSelected(const QwtDoublePoint &)));
 
   connect(this, SIGNAL( legendChecked(QwtPlotItem *, bool ) ), 
 	  this, SLOT( LegendEntryChecked(QwtPlotItem *, bool ) ));
@@ -188,6 +194,14 @@ void
 ConstellationDisplayPlot::LegendEntryChecked(QwtPlotItem* plotItem, bool on)
 {
   plotItem->setVisible(!on);
+}
+
+void
+ConstellationDisplayPlot::OnPickerPointSelected(const QwtDoublePoint & p)
+{
+    QPointF point = p;
+    //fprintf(stderr,"OnPickerPointSelected %f %f\n", point.x(), point.y());
+    emit plotPointSelected(point);
 }
 
 #endif /* CONSTELLATION_DISPLAY_PLOT_C */

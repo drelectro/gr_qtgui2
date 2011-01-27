@@ -12,6 +12,7 @@
 #include <qwt_plot_panner.h>
 #include <qwt_plot_marker.h>
 #include <highResTimeFunctions.h>
+#include <qtgui_util.h>
 #include <qwt_symbol.h>
 
 class ConstellationDisplayPlot : public QwtPlot
@@ -38,6 +39,11 @@ public:
 public slots:
   void resizeSlot( QSize *s );
 
+  void OnPickerPointSelected(const QwtDoublePoint & p);
+
+signals:
+  void plotPointSelected(const QPointF p);
+
 protected slots:
   void LegendEntryChecked(QwtPlotItem *plotItem, bool on);
 
@@ -48,6 +54,8 @@ private:
 
   QwtPlotPanner* _panner;
   QwtPlotZoomer* _zoomer;
+
+  QwtDblClickPlotPicker *_picker;
   
   double* _realDataPoints;
   double* _imagDataPoints;

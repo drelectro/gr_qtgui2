@@ -31,8 +31,7 @@ AM_CPPFLAGS = $(STD_DEFINES_AND_INCLUDES) $(PYTHON_CPPFLAGS) \
 QMAKE_SOURCES = 					\
 	qtgui2_sink_c.moc.cc			\
 	SpectrumGUIClass.moc.cc			\
-	spectrumdisplaywidget.moc.cc	\
-	spectrumdisplayform.moc.cc		\
+	spectrumdisplaywidget.moc.cc		\
 	FrequencyDisplayPlot.moc.cc	 	\
 	TimeDomainDisplayPlot.moc.cc	\
 	WaterfallDisplayPlot.moc.cc		\
@@ -53,11 +52,11 @@ libgnuradio_qtgui2_la_SOURCES = 	\
 	WaterfallDisplayPlot.cc			\
 	waterfallGlobalData.cc			\
 	ConstellationDisplayPlot.cc		\
-	spectrumdisplayform.cc			\
-	spectrumdisplaywidget.cc		\
+	spectrumdisplaywidget.cc			\
 	SpectrumGUIClass.cc				\
 	spectrumUpdateEvents.cc			\
 	plot_waterfall.cc				\
+        qtgui_util.cc                           \
 	qtgui2_sink_c.cc				\
 	qtgui2_sink_f.cc
 
@@ -73,9 +72,9 @@ grinclude_HEADERS =				\
 	highResTimeFunctions.h		\
 	plot_waterfall.h			\
 	spectrumdisplaywidget.h		\
-	spectrumdisplayform.h		\
 	SpectrumGUIClass.h			\
 	spectrumUpdateEvents.h		\
+        qtgui_util.h                    \
 	qtgui2.h					\
 	qtgui2_sink_c.h				\
 	qtgui2_sink_f.h

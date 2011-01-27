@@ -89,7 +89,7 @@ qtgui2_sink_c::qtgui2_sink_c (int fftsize, int wintype,
 
   buildwindow();
 
-  initialize(use_openGL);
+  initialize(use_openGL, showform);
 }
 
 qtgui2_sink_c::~qtgui2_sink_c()
@@ -120,7 +120,7 @@ void qtgui2_sink_c::unlock()
 
 
 void
-qtgui2_sink_c::initialize(const bool opengl)
+qtgui2_sink_c::initialize(const bool opengl, const bool showform)
 {
   if(qApp != NULL) {
     d_qApplication = qApp;
@@ -148,7 +148,7 @@ qtgui2_sink_c::initialize(const bool opengl)
   d_main_gui->OpenSpectrumWindow(d_parent, 
 				 d_plotfreq, d_plotwaterfall,
 				 d_plottime, d_plotconst,
-				 opengl);
+                                 opengl, showform);
 
   // initialize update time to 10 times a second
   set_update_time(0.1);
@@ -329,31 +329,5 @@ qtgui2_sink_c::general_work (int noutput_items,
 
   consume_each(j);
   return j;
-}
-
-//MJC
-void
-qtgui2_sink_c::set_trace_colour(const unsigned char r, const unsigned char g, const unsigned char b)
-{
-  //fprintf(stderr,"Set FG Colour %02x %02x %02x\n", r,g,b);
-  d_main_gui->SetTraceColour (QColor(r, g, b));
-}
-
-void 
-qtgui2_sink_c::set_bg_colour(const unsigned char r, const unsigned char g, const unsigned char b)
-{
-  d_main_gui->SetBGColour (QColor(r, g, b));
-}
-
-void 
-qtgui2_sink_c::set_use_rf_frequencies(bool userff)
-{
-   d_main_gui->SetUseRFFrequencies (userff);
-}
-
-void
-qtgui2_sink_c::set_show_cf_marker(bool show)
-{
-   d_main_gui->ShowCFMarker (show);
 }
 

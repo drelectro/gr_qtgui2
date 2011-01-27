@@ -1,7 +1,7 @@
 #ifndef SPECTRUM_DISPLAY_WIDGET_H
 #define SPECTRUM_DISPLAY_WIDGET_H
 
-//#include "spectrumdisplayform.ui.h"
+#include "spectrumdisplayform.ui.h"
 
 class SpectrumGUIClass;
 
@@ -16,12 +16,21 @@ class SpectrumGUIClass;
 
 #include <QColor>
 
-class SpectrumDisplayWidget : public QWidget
+class SpectrumDisplayWidget : public QWidget, public Ui::SpectrumDisplayForm
 {
   Q_OBJECT
 
   public:
-  SpectrumDisplayWidget(bool useOpenGL = true, QWidget* parent = 0);
+
+  enum ColorTarget
+  {
+      FrequencyBackgroundColor = 1,
+      FrequencyPowerCurveColor,
+      FrequencyMinPowerCurveColor,
+      FrequencyMaxPowerCurveColor
+  };
+
+  SpectrumDisplayWidget(bool useOpenGL = true, const bool showForm = true, QWidget* parent = 0);
   ~SpectrumDisplayWidget();
   
   void setSystem( SpectrumGUIClass * newSystem, const uint64_t numFFTDataPoints,
@@ -69,18 +78,21 @@ public slots:
   void SetUpdateTime(double t);
 
   //MJC
-  void SetTraceColour (QColor c);
-  void SetBGColour (QColor c);
+  void setPlotItemColor (int item, QColor c);
   void SetUseRFFrequencies (bool userff);
   void ShowCFMarker (bool show);
 
 private slots:
   void newFrequencyData( const SpectrumUpdateEvent* );
   void UpdateGuiTimer();
-  void onPlotPointSelected(const QPointF p);
+  void onFFTPlotPointSelected(const QPointF p);
+  void onWFallPlotPointSelected(const QPointF p);
+  void onTimePlotPointSelected(const QPointF p);
+  void onConstPlotPointSelected(const QPointF p);
 
 signals:
-  void plotPointSelected(const QPointF p);
+  void plotPointSelected(const QPointF p, int type);
+
 
 protected:
 
@@ -108,6 +120,7 @@ private:
   double _peakAmplitude;
   static int _openGLWaterfall3DFlag;
   double _stopFrequency;
+  bool _showForm;
   
   //SpectrumUpdateEvent _lastSpectrumEvent;
   

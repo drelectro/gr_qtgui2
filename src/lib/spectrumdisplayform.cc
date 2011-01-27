@@ -5,7 +5,7 @@
 
 int SpectrumDisplayForm::_openGLWaterfall3DFlag = -1;
 
-SpectrumDisplayForm::SpectrumDisplayForm(bool useOpenGL, QWidget* parent)
+SpectrumDisplayForm::SpectrumDisplayForm(bool useOpenGL, const bool showForm, QWidget* parent)
   : QWidget(parent)
 {
   setupUi(this);
@@ -199,7 +199,7 @@ SpectrumDisplayForm::newFrequencyData( const SpectrumUpdateEvent* spectrumUpdate
     if(tabindex == d_plot_time) {
       _timeDomainDisplayPlot->PlotNewData(realTimeDomainDataPoints, 
 					  imagTimeDomainDataPoints, 
-					  numTimeDomainDataPoints,
+                                          numTimeDomainDataPoints,
 					  d_update_time);
     }
     if(tabindex == d_plot_constellation) {

@@ -13,16 +13,8 @@
 #include <qwt_plot_marker.h>
 #include <qwt_plot_magnifier.h>
 #include <highResTimeFunctions.h>
+#include <qtgui_util.h>
 #include <qwt_symbol.h>
-
-
-class QwtDblClickPlotPicker:public QwtPlotPicker{
-public:
-    QwtDblClickPlotPicker(QwtPlotCanvas *);
-    ~QwtDblClickPlotPicker();
-
-    virtual QwtPickerMachine * stateMachine(int) const;
-};
 
 class FrequencyDisplayPlot:public QwtPlot{
   Q_OBJECT
@@ -97,6 +89,7 @@ private:
   
   double* _dataPoints;
   double* _xAxisPoints;
+  int     _xAxisMultiplier;
 
   double* _minFFTPoints;
   double* _maxFFTPoints;
@@ -110,6 +103,7 @@ private:
   timespec _lastReplot;
 
   bool _useCenterFrequencyFlag;
+
 };
 
 #endif /* FREQUENCY_DISPLAY_PLOT_HPP */

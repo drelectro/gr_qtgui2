@@ -4,9 +4,8 @@
 #include <FrequencyDisplayPlot.h>
 
 #include <qwt_scale_draw.h>
-#include <qevent.h>
 #include <qwt_event_pattern.h>
-#include <qwt_picker_machine.h>
+
 
 class FreqPrecisionClass
 {
@@ -95,46 +94,7 @@ private:
   std::string _unitType;
 };
 
-class QwtPickerDblClickPointMachine: public QwtPickerMachine
-{
-public:
-    virtual CommandList transition( const QwtEventPattern &eventPattern, const QEvent *e)
-    {
-        QwtPickerMachine::CommandList cmdList;
-        switch(e->type())
-         {
-             case QEvent::MouseButtonDblClick:
-             {
-                 if ( eventPattern.mouseMatch(
-                     QwtEventPattern::MouseSelect1, (const QMouseEvent *)e) )
-                 {
-                     cmdList += Begin;
-                     cmdList += Append;
-                     cmdList += End;
-                 }
-                 break;
-             }
-            default:
-                break;
-        }
-        return cmdList;
-    }
-};
 
-QwtDblClickPlotPicker::QwtDblClickPlotPicker(QwtPlotCanvas* canvas)
-      : QwtPlotPicker(canvas)
-{
-    setSelectionFlags(QwtPicker::PointSelection);
-};
-
-QwtDblClickPlotPicker::~QwtDblClickPlotPicker()
-{
-};
-
-QwtPickerMachine * QwtDblClickPlotPicker::stateMachine(int n) const
-{
-    return new QwtPickerDblClickPointMachine;
-}
 
 FrequencyDisplayPlot::FrequencyDisplayPlot(QWidget* parent)
   : QwtPlot(parent)
@@ -156,7 +116,7 @@ FrequencyDisplayPlot::FrequencyDisplayPlot(QWidget* parent)
 
   // Disable polygon clipping
   QwtPainter::setDeviceClipping(false);
-  
+
   // We don't need the cache here
   canvas()->setPaintAttribute(QwtPlotCanvas::PaintCached, false);
   canvas()->setPaintAttribute(QwtPlotCanvas::PaintPacked, false);
@@ -232,6 +192,7 @@ FrequencyDisplayPlot::FrequencyDisplayPlot(QWidget* parent)
   _markerCF->setLineStyle(QwtPlotMarker::VLine);
   _markerCF->setLinePen(QPen(Qt::lightGray, 0, Qt::DotLine));
   _markerCF->attach(this);
+  _markerCF->hide();
 
   _peakFrequency = 0;
   _peakAmplitude = -HUGE_VAL;
@@ -306,8 +267,9 @@ void
 FrequencyDisplayPlot::OnPickerPointSelected(const QwtDoublePoint & p)
 {
     QPointF point = p;
-    fprintf(stderr,"OnPickerPointSelected %f %f\n", point.x(), point.y());
-    emit plotPointSelected(p);
+    //fprintf(stderr,"OnPickerPointSelected %f %f %d\n", point.x(), point.y(), _xAxisMultiplier);
+    point.setX(point.x() * _xAxisMultiplier);
+    emit plotPointSelected(point);
 }
 
 void
@@ -335,6 +297,7 @@ FrequencyDisplayPlot::SetFrequencyRange(const double constStartFreq,
   double stopFreq = constStopFreq / units;
   double centerFreq = constCenterFreq / units;
 
+  _xAxisMultiplier = units;
   _useCenterFrequencyFlag = useCenterFrequencyFlag;
 
   if(_useCenterFrequencyFlag){

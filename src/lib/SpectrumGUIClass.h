@@ -13,9 +13,9 @@
 //#include <Windowing.hpp>
 
 class SpectrumDisplayWidget;
-class SpectrumDisplayForm;
+//class SpectrumDisplayForm;
 #include <spectrumdisplaywidget.h>
-#include <spectrumdisplayform.h>
+//#include <spectrumdisplayform.h>
 
 #include <cmath>
 
@@ -84,12 +84,6 @@ public:
   void SetFrequencyAxis(double min, double max);
 
   void SetUpdateTime(double t);
-
-  //MJC
-  void SetTraceColour (QColor c);
-  void SetBGColour (QColor c);
-  void SetUseRFFrequencies (bool userff);
-  void ShowCFMarker (bool show);
 
 protected:
 

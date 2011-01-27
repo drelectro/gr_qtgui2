@@ -10,8 +10,10 @@
 #include <qwt_scale_widget.h>
 #include <qwt_plot_zoomer.h>
 #include <qwt_plot_panner.h>
+#include <qwt_plot_magnifier.h>
 #include <qwt_plot_marker.h>
 #include <highResTimeFunctions.h>
+#include <qtgui_util.h>
 #include <qwt_symbol.h>
 
 class TimeDomainDisplayPlot:public QwtPlot{
@@ -36,6 +38,11 @@ public slots:
   void SetSampleRate(double sr, double units, 
 		     const std::string &strunits);
 
+  void OnPickerPointSelected(const QwtDoublePoint & p);
+
+signals:
+  void plotPointSelected(const QPointF p);
+
 protected slots:
   void LegendEntryChecked(QwtPlotItem *plotItem, bool on);
 
@@ -49,6 +56,9 @@ private:
 
   QwtPlotPanner* _panner;
   QwtPlotZoomer* _zoomer;
+
+  QwtDblClickPlotPicker *_picker;
+  QwtPlotMagnifier *_magnifier;
   
   double* _realDataPoints;
   double* _imagDataPoints;

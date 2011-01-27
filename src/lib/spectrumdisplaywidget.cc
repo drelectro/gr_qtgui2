@@ -5,74 +5,97 @@
 
 int SpectrumDisplayWidget::_openGLWaterfall3DFlag = -1;
 
-SpectrumDisplayWidget::SpectrumDisplayWidget(bool useOpenGL, QWidget* parent)
+SpectrumDisplayWidget::SpectrumDisplayWidget(bool useOpenGL, const bool showForm, QWidget* parent)
   : QWidget(parent)
 {
-  //setupUi(this); 
+  _showForm = showForm;
+
+  if (_showForm)
+    setupUi(this);
 
   _useOpenGL = useOpenGL;
   _systemSpecifiedFlag = false;
   _intValidator = new QIntValidator(this);
   _intValidator->setBottom(0);
 
-  resize(657, 478);
- 
-  _frequencyDisplayPlot = new FrequencyDisplayPlot(this);
-
-  //_frequencyDisplayPlot = new FrequencyDisplayPlot(FrequencyPlotDisplayFrame);
-  //_waterfallDisplayPlot = new WaterfallDisplayPlot(WaterfallPlotDisplayFrame);
-  //_timeDomainDisplayPlot = new TimeDomainDisplayPlot(TimeDomainDisplayFrame);
-  //_constellationDisplayPlot = new ConstellationDisplayPlot(ConstellationDisplayFrame);
+  if (_showForm) {
+      _frequencyDisplayPlot = new FrequencyDisplayPlot(FrequencyPlotDisplayFrame);
+      _waterfallDisplayPlot = new WaterfallDisplayPlot(WaterfallPlotDisplayFrame);
+      _timeDomainDisplayPlot = new TimeDomainDisplayPlot(TimeDomainDisplayFrame);
+      _constellationDisplayPlot = new ConstellationDisplayPlot(ConstellationDisplayFrame);
+  }
+  else {
+      _waterfallDisplayPlot = NULL;
+      _timeDomainDisplayPlot = NULL;
+      _constellationDisplayPlot = NULL;
+      _frequencyDisplayPlot = NULL;
+  }
 
   _numRealDataPoints = 1024;
   _realFFTDataPoints = new double[_numRealDataPoints];
   _averagedValues = new double[_numRealDataPoints];
   _historyVector = new std::vector<double*>;
 
+
+
+  if (_showForm) {
+      AvgLineEdit->setRange(0, 500);                 // Set range of Average box value from 0 to 500
+      MinHoldCheckBox_toggled( false );
+      MaxHoldCheckBox_toggled( false );
+
+      WaterfallMaximumIntensityWheel->setRange(-200, 0);
+      WaterfallMaximumIntensityWheel->setTickCnt(50);
+      WaterfallMinimumIntensityWheel->setRange(-200, 0);
+      WaterfallMinimumIntensityWheel->setTickCnt(50);
+      WaterfallMinimumIntensityWheel->setValue(-200);
+  }
+
   //MJC
   _useRfFrequencies = false;
-  
-  //AvgLineEdit->setRange(0, 500);                 // Set range of Average box value from 0 to 500
-  MinHoldCheckBox_toggled( false );
-  MaxHoldCheckBox_toggled( false );
-/*  
-  WaterfallMaximumIntensityWheel->setRange(-200, 0);
-  WaterfallMaximumIntensityWheel->setTickCnt(50);
-  WaterfallMinimumIntensityWheel->setRange(-200, 0);
-  WaterfallMinimumIntensityWheel->setTickCnt(50);
-  WaterfallMinimumIntensityWheel->setValue(-200);
-*/
-  
+
   _peakFrequency = 0;
   _peakAmplitude = -HUGE_VAL;
   
   _noiseFloorAmplitude = -HUGE_VAL;
-/*
-  connect(_waterfallDisplayPlot, SIGNAL(UpdatedLowerIntensityLevel(const double)), 
-	  _frequencyDisplayPlot, SLOT(SetLowerIntensityLevel(const double)));
-  connect(_waterfallDisplayPlot, SIGNAL(UpdatedUpperIntensityLevel(const double)), 
-	  _frequencyDisplayPlot, SLOT(SetUpperIntensityLevel(const double)));
-*/
-  _frequencyDisplayPlot->SetLowerIntensityLevel(-200);
-  _frequencyDisplayPlot->SetUpperIntensityLevel(-200);
 
-  // Load up the acceptable FFT sizes...
-  //FFTSizeComboBox->clear();
-  //for(long fftSize = SpectrumGUIClass::MIN_FFT_SIZE; fftSize <= SpectrumGUIClass::MAX_FFT_SIZE; fftSize *= 2){
-  //  FFTSizeComboBox->insertItem(FFTSizeComboBox->count(), QString("%1").arg(fftSize));
-  //}
+
+  if (_showForm) {
+    connect(_waterfallDisplayPlot, SIGNAL(UpdatedLowerIntensityLevel(const double)),
+            _frequencyDisplayPlot, SLOT(SetLowerIntensityLevel(const double)));
+    connect(_waterfallDisplayPlot, SIGNAL(UpdatedUpperIntensityLevel(const double)),
+            _frequencyDisplayPlot, SLOT(SetUpperIntensityLevel(const double)));
+
+    _frequencyDisplayPlot->SetLowerIntensityLevel(-200);
+    _frequencyDisplayPlot->SetUpperIntensityLevel(-200);
+
+    // Load up the acceptable FFT sizes...
+    FFTSizeComboBox->clear();
+    for(long fftSize = SpectrumGUIClass::MIN_FFT_SIZE; fftSize <= SpectrumGUIClass::MAX_FFT_SIZE; fftSize *= 2)
+        FFTSizeComboBox->insertItem(FFTSizeComboBox->count(), QString("%1").arg(fftSize));
+
+    connect(_frequencyDisplayPlot, SIGNAL(plotPointSelected(const QPointF)),
+            this, SLOT(onFFTPlotPointSelected(const QPointF)));
+
+    connect(_waterfallDisplayPlot, SIGNAL(plotPointSelected(const QPointF)),
+            this, SLOT(onWFallPlotPointSelected(const QPointF)));
+
+    connect(_timeDomainDisplayPlot, SIGNAL(plotPointSelected(const QPointF)),
+            this, SLOT(onTimePlotPointSelected(const QPointF)));
+
+    connect(_constellationDisplayPlot, SIGNAL(plotPointSelected(const QPointF)),
+            this, SLOT(onConstPlotPointSelected(const QPointF)));
+
+
+}
+
   Reset();
-
   ToggleTabFrequency(false);
   ToggleTabWaterfall(false);
   ToggleTabTime(false);
   ToggleTabConstellation(false);
-
   // Create a timer to update plots at the specified rate
   displayTimer = new QTimer(this);
   connect(displayTimer, SIGNAL(timeout()), this, SLOT(UpdateGuiTimer()));
-
-  connect(_frequencyDisplayPlot, SIGNAL(plotPointSelected(const QPointF)), this, SLOT(onPlotPointSelected(const QPointF)));
 }
 
 SpectrumDisplayWidget::~SpectrumDisplayWidget()
@@ -201,8 +224,12 @@ SpectrumDisplayWidget::newFrequencyData( const SpectrumUpdateEvent* spectrumUpda
   }
 
   if(lastOfMultipleUpdatesFlag){
-    //int tabindex = SpectrumTypeTab->currentIndex();
-	int tabindex = d_plot_fft;
+
+    int tabindex = 1;
+    if (_showForm)
+        tabindex = SpectrumTypeTab->currentIndex();
+
+
     if(tabindex == d_plot_fft) {
       _frequencyDisplayPlot->PlotNewData(_averagedValues, numFFTDataPoints, 
 					 _noiseFloorAmplitude, _peakFrequency, 
@@ -220,7 +247,6 @@ SpectrumDisplayWidget::newFrequencyData( const SpectrumUpdateEvent* spectrumUpda
 					     numTimeDomainDataPoints,
 					     d_update_time);
     }
-
     // Don't update the repeated data for the waterfall
     if(!repeatDataFlag){
       if(tabindex == d_plot_waterfall) {
@@ -229,7 +255,6 @@ SpectrumDisplayWidget::newFrequencyData( const SpectrumUpdateEvent* spectrumUpda
 					   spectrumUpdateEvent->getDroppedFFTFrames());
       }
     }
-
     
     // Tell the system the GUI has been updated
     if(_systemSpecifiedFlag){
@@ -243,40 +268,45 @@ void
 SpectrumDisplayWidget::resizeEvent( QResizeEvent *e )
 {
   QSize s;
-  //s.setWidth(FrequencyPlotDisplayFrame->width());
-  //s.setHeight(FrequencyPlotDisplayFrame->height());
-  s.setWidth(width());
-  s.setHeight(height());
-  emit _frequencyDisplayPlot->resizeSlot(&s);
 
-/*
-  s.setWidth(TimeDomainDisplayFrame->width());
-  s.setHeight(TimeDomainDisplayFrame->height());
-  emit _timeDomainDisplayPlot->resizeSlot(&s);
+  if (_showForm) {
+    s.setWidth(FrequencyPlotDisplayFrame->width());
+    s.setHeight(FrequencyPlotDisplayFrame->height());
 
-  s.setWidth(WaterfallPlotDisplayFrame->width());
-  s.setHeight(WaterfallPlotDisplayFrame->height());
-  emit _waterfallDisplayPlot->resizeSlot(&s);
+    s.setWidth(TimeDomainDisplayFrame->width());
+    s.setHeight(TimeDomainDisplayFrame->height());
 
-  s.setWidth(ConstellationDisplayFrame->width());
-  s.setHeight(ConstellationDisplayFrame->height());
-  emit _constellationDisplayPlot->resizeSlot(&s);
-*/
+    s.setWidth(WaterfallPlotDisplayFrame->width());
+    s.setHeight(WaterfallPlotDisplayFrame->height());
+
+    s.setWidth(ConstellationDisplayFrame->width());
+    s.setHeight(ConstellationDisplayFrame->height());
+  }
+  else {
+    s.setWidth(width());
+    s.setHeight(height());
+  }
+
+  if (_frequencyDisplayPlot != NULL ) emit _frequencyDisplayPlot->resizeSlot(&s);
+  if (_timeDomainDisplayPlot != NULL ) emit _timeDomainDisplayPlot->resizeSlot(&s);
+  if (_waterfallDisplayPlot != NULL ) emit _waterfallDisplayPlot->resizeSlot(&s);
+  if (_constellationDisplayPlot != NULL ) emit _constellationDisplayPlot->resizeSlot(&s);
+
 }
 
 void
 SpectrumDisplayWidget::customEvent( QEvent * e)
 {
-
   if(e->type() == QEvent::User+3){
-    if(_systemSpecifiedFlag){
-      //MJC WindowComboBox->setCurrentIndex(_system->GetWindowType());
-      //FFTSizeComboBox->setCurrentIndex(_system->GetFFTSizeIndex());
-      //FFTSizeComboBox->setCurrentIndex(1);
+    if (_showForm) {
+        if(_systemSpecifiedFlag){
+            WindowComboBox->setCurrentIndex(_system->GetWindowType());
+            FFTSizeComboBox->setCurrentIndex(_system->GetFFTSizeIndex());
+            FFTSizeComboBox->setCurrentIndex(1);
+        }
+        waterfallMinimumIntensityChangedCB(WaterfallMinimumIntensityWheel->value());
+        waterfallMaximumIntensityChangedCB(WaterfallMaximumIntensityWheel->value());
     }
-
-    //waterfallMinimumIntensityChangedCB(WaterfallMinimumIntensityWheel->value());
-    //waterfallMaximumIntensityChangedCB(WaterfallMaximumIntensityWheel->value());
 
     // Clear any previous display
     Reset();
@@ -301,18 +331,18 @@ SpectrumDisplayWidget::customEvent( QEvent * e)
 
     //MJC UseRFFrequenciesCB(UseRFFrequenciesCheckBox->isChecked());
   }
-
 }
 
 void
 SpectrumDisplayWidget::UpdateGuiTimer()
 {
+
   // This is called by the displayTimer and redraws the canvases of
   // all of the plots.
-  _frequencyDisplayPlot->canvas()->update();
-  //_waterfallDisplayPlot->canvas()->update();
-  //_timeDomainDisplayPlot->canvas()->update();
-  //_constellationDisplayPlot->canvas()->update();
+  if (_frequencyDisplayPlot != NULL) _frequencyDisplayPlot->canvas()->update();
+  if (_waterfallDisplayPlot != NULL) _waterfallDisplayPlot->canvas()->update();
+  if (_timeDomainDisplayPlot != NULL) _timeDomainDisplayPlot->canvas()->update();
+  if (_constellationDisplayPlot != NULL) _constellationDisplayPlot->canvas()->update();
 }
 
 
@@ -326,16 +356,17 @@ SpectrumDisplayWidget::AvgLineEdit_valueChanged( int value )
 void
 SpectrumDisplayWidget::MaxHoldCheckBox_toggled( bool newState )
 {
-  //MaxHoldResetBtn->setEnabled(newState);
+  MaxHoldResetBtn->setEnabled(newState);
   _frequencyDisplayPlot->SetMaxFFTVisible(newState);
   MaxHoldResetBtn_clicked();
 }
 
 
+
 void
 SpectrumDisplayWidget::MinHoldCheckBox_toggled( bool newState )
 {
-  //MinHoldResetBtn->setEnabled(newState);
+  MinHoldResetBtn->setEnabled(newState);
   _frequencyDisplayPlot->SetMinFFTVisible(newState);
   MinHoldResetBtn_clicked();
 }
@@ -357,11 +388,14 @@ SpectrumDisplayWidget::MaxHoldResetBtn_clicked()
 }
 
 
+
 void
 SpectrumDisplayWidget::TabChanged(int index)
 {
+  //SetFrequencyRange(_centerFrequency, _startFrequency, _stopFrequency);
   // This might be dangerous to call this with NULL
-  resizeEvent(NULL);  
+  resizeEvent(NULL);
+
 }
 
 void
@@ -378,7 +412,7 @@ SpectrumDisplayWidget::SetFrequencyRange(const double newCenterFrequency,
   else {
     fdiff = std::max(fabs(newStartFrequency), fabs(newStopFrequency));
   }
-
+  fdiff =1;
   if(fdiff > 0) {
     std::string strunits[4] = {"Hz", "kHz", "MHz", "GHz"};
     std::string strtime[4] = {"sec", "ms", "us", "ns"};
@@ -391,20 +425,28 @@ SpectrumDisplayWidget::SetFrequencyRange(const double newCenterFrequency,
     _stopFrequency = newStopFrequency;
     _centerFrequency = newCenterFrequency;
 
-    _frequencyDisplayPlot->SetFrequencyRange(_startFrequency,
+    if (_frequencyDisplayPlot != NULL){
+        _frequencyDisplayPlot->SetFrequencyRange(_startFrequency,
 					     _stopFrequency,
 					     _centerFrequency,
 					     _useRfFrequencies,
 					     units, strunits[iunit]);
-/*
-    _waterfallDisplayPlot->SetFrequencyRange(_startFrequency,
+    }
+
+
+    if (_waterfallDisplayPlot != NULL){
+        _waterfallDisplayPlot->SetFrequencyRange(_startFrequency,
 					     _stopFrequency,
 					     _centerFrequency,
 					     _useRfFrequencies,
 					     units, strunits[iunit]);
-    _timeDomainDisplayPlot->SetSampleRate(_stopFrequency - _startFrequency,
+    }
+
+    if (_timeDomainDisplayPlot != NULL){
+        _timeDomainDisplayPlot->SetSampleRate(_stopFrequency - _startFrequency,
 					  units, strtime[iunit]);
-*/
+    }
+
   }
 }
 
@@ -492,7 +534,8 @@ SpectrumDisplayWidget::Reset()
 {
   AverageDataReset();
 
-  //_waterfallDisplayPlot->Reset();
+  if (_waterfallDisplayPlot != NULL)
+    _waterfallDisplayPlot->Reset();
 }
 
 
@@ -504,8 +547,10 @@ SpectrumDisplayWidget::AverageDataReset()
 
   memset(_averagedValues, 0x0, _numRealDataPoints*sizeof(double));
 
-  MaxHoldResetBtn_clicked();
-  MinHoldResetBtn_clicked();
+  if (_showForm) {
+    MaxHoldResetBtn_clicked();
+    MinHoldResetBtn_clicked();
+  }
 }
 
 
@@ -541,7 +586,6 @@ SpectrumDisplayWidget::UseRFFrequenciesCB( bool useRFFlag )
 void
 SpectrumDisplayWidget::waterfallMaximumIntensityChangedCB( double newValue )
 {
-/*
   if(newValue > WaterfallMinimumIntensityWheel->value()){
     WaterfallMaximumIntensityLabel->setText(QString("%1 dB").arg(newValue, 0, 'f', 0));
   }
@@ -549,16 +593,15 @@ SpectrumDisplayWidget::waterfallMaximumIntensityChangedCB( double newValue )
     WaterfallMaximumIntensityWheel->setValue(WaterfallMinimumIntensityWheel->value());
   }
 
-  _waterfallDisplayPlot->SetIntensityRange(WaterfallMinimumIntensityWheel->value(),
-					   WaterfallMaximumIntensityWheel->value())
-*/
+  if (_waterfallDisplayPlot != NULL)
+    _waterfallDisplayPlot->SetIntensityRange(WaterfallMinimumIntensityWheel->value(),
+                                           WaterfallMaximumIntensityWheel->value());
 }
 
 
 void
 SpectrumDisplayWidget::waterfallMinimumIntensityChangedCB( double newValue )
 {
-/*
   if(newValue < WaterfallMaximumIntensityWheel->value()){
     WaterfallMinimumIntensityLabel->setText(QString("%1 dB").arg(newValue, 0, 'f', 0));
   }
@@ -566,9 +609,9 @@ SpectrumDisplayWidget::waterfallMinimumIntensityChangedCB( double newValue )
     WaterfallMinimumIntensityWheel->setValue(WaterfallMaximumIntensityWheel->value());
   }
 
-  _waterfallDisplayPlot->SetIntensityRange(WaterfallMinimumIntensityWheel->value(),
+  if (_waterfallDisplayPlot != NULL)
+    _waterfallDisplayPlot->SetIntensityRange(WaterfallMinimumIntensityWheel->value(),
 					   WaterfallMaximumIntensityWheel->value());
-*/
 }
 
 void
@@ -583,7 +626,6 @@ SpectrumDisplayWidget::FFTComboBoxSelectedCB( const QString &fftSizeString )
 void
 SpectrumDisplayWidget::WaterfallAutoScaleBtnCB()
 {
-/*
   double minimumIntensity = _noiseFloorAmplitude - 5;
   if(minimumIntensity < WaterfallMinimumIntensityWheel->minValue()){
     minimumIntensity = WaterfallMinimumIntensityWheel->minValue();
@@ -595,16 +637,15 @@ SpectrumDisplayWidget::WaterfallAutoScaleBtnCB()
   }
   WaterfallMaximumIntensityWheel->setValue(maximumIntensity);
   waterfallMaximumIntensityChangedCB(maximumIntensity);
-*/
 }
 
 void
 SpectrumDisplayWidget::WaterfallIntensityColorTypeChanged( int newType )
 {
-/*
   QColor lowIntensityColor;
   QColor highIntensityColor;
-  if(newType == WaterfallDisplayPlot::INTENSITY_COLOR_MAP_TYPE_USER_DEFINED){
+
+  if((newType == WaterfallDisplayPlot::INTENSITY_COLOR_MAP_TYPE_USER_DEFINED) && (_waterfallDisplayPlot != NULL)){
     // Select the Low Intensity Color
     lowIntensityColor = _waterfallDisplayPlot->GetUserDefinedLowIntensityColor();
     if(!lowIntensityColor.isValid()){
@@ -622,102 +663,179 @@ SpectrumDisplayWidget::WaterfallIntensityColorTypeChanged( int newType )
     highIntensityColor = QColorDialog::getColor(highIntensityColor, this);
   }
   
-  _waterfallDisplayPlot->SetIntensityColorMapType(newType, lowIntensityColor, highIntensityColor);
-*/
+  if (_waterfallDisplayPlot != NULL)
+    _waterfallDisplayPlot->SetIntensityColorMapType(newType, lowIntensityColor, highIntensityColor);
 }
 
 void
 SpectrumDisplayWidget::ToggleTabFrequency(const bool state)
 {
-/*
-  if(state == true) {
-    if(d_plot_fft == -1) {
-      SpectrumTypeTab->addTab(FrequencyPage, "Frequency Display");
-      d_plot_fft = SpectrumTypeTab->count()-1;
-    }
+  if (_showForm) {
+      if(state == true) {
+        if(d_plot_fft == -1) {
+          SpectrumTypeTab->addTab(FrequencyPage, "Frequency Display");
+          d_plot_fft = SpectrumTypeTab->count()-1;
+        }
+      }
+      else {
+        SpectrumTypeTab->removeTab(SpectrumTypeTab->indexOf(FrequencyPage));
+        d_plot_fft = -1;
+      }
   }
-  else {
-    SpectrumTypeTab->removeTab(SpectrumTypeTab->indexOf(FrequencyPage));
-    d_plot_fft = -1;
+  else
+  {
+      if((state == true) && _frequencyDisplayPlot == NULL){
+        _frequencyDisplayPlot = new FrequencyDisplayPlot(this);
+        connect(_frequencyDisplayPlot, SIGNAL(plotPointSelected(const QPointF)), this, SLOT(onFFTPlotPointSelected(const QPointF)));
+        d_plot_fft = 1;
+        TabChanged(0);
+      }
+      else if (state == false)
+      {
+          d_plot_fft = -1;
+          if (_frequencyDisplayPlot != NULL){
+              delete _frequencyDisplayPlot;
+              _frequencyDisplayPlot = NULL;
+          }
+      }
+
   }
-*/
 }
 
 void
 SpectrumDisplayWidget::ToggleTabWaterfall(const bool state)
 {
-/*
-  if(state == true) {
-    if(d_plot_waterfall == -1) {
-      SpectrumTypeTab->addTab(WaterfallPage, "Waterfall Display");
-      d_plot_waterfall = SpectrumTypeTab->count()-1;
-    }
+  if (_showForm) {
+      if(state == true) {
+        if(d_plot_waterfall == -1) {
+          SpectrumTypeTab->addTab(WaterfallPage, "Waterfall Display");
+          d_plot_waterfall = SpectrumTypeTab->count()-1;
+        }
+      }
+      else {
+        SpectrumTypeTab->removeTab(SpectrumTypeTab->indexOf(WaterfallPage));
+        d_plot_waterfall = -1;
+      }
   }
-  else {
-    SpectrumTypeTab->removeTab(SpectrumTypeTab->indexOf(WaterfallPage));
-    d_plot_waterfall = -1;
+  else
+  {
+      if((state == true) && _waterfallDisplayPlot == NULL){
+        _waterfallDisplayPlot = new WaterfallDisplayPlot(this);
+        connect(_waterfallDisplayPlot, SIGNAL(plotPointSelected(const QPointF)), this, SLOT(onWFallPlotPointSelected(const QPointF)));
+        d_plot_waterfall = 1;
+        TabChanged(0);
+      }
+      else if (state == false)
+      {
+          d_plot_waterfall = -1;
+          if (_waterfallDisplayPlot != NULL){
+              delete _waterfallDisplayPlot;
+              _waterfallDisplayPlot = NULL;
+          }
+      }
+
   }
-*/
+
+
 }
 
 void
 SpectrumDisplayWidget::ToggleTabTime(const bool state)
 {
-/*
-  if(state == true) {
-    if(d_plot_time == -1) {
-      SpectrumTypeTab->addTab(TimeDomainPage, "Time Domain Display");
-      d_plot_time = SpectrumTypeTab->count()-1;
-    }
+  if (_showForm) {
+      if(state == true) {
+        if(d_plot_time == -1) {
+          SpectrumTypeTab->addTab(TimeDomainPage, "Time Domain Display");
+          d_plot_time = SpectrumTypeTab->count()-1;
+        }
+      }
+      else {
+        SpectrumTypeTab->removeTab(SpectrumTypeTab->indexOf(TimeDomainPage));
+        d_plot_time = -1;
+      }
   }
-  else {
-    SpectrumTypeTab->removeTab(SpectrumTypeTab->indexOf(TimeDomainPage));
-    d_plot_time = -1;
+  else
+  {
+      if((state == true) && _timeDomainDisplayPlot == NULL){
+        _timeDomainDisplayPlot = new TimeDomainDisplayPlot(this);
+        connect(_timeDomainDisplayPlot, SIGNAL(plotPointSelected(const QPointF)), this, SLOT(onTimePlotPointSelected(const QPointF)));
+        d_plot_time = 1;
+      }
+      else if (state == false)
+      {
+          d_plot_time = -1;
+          if (_timeDomainDisplayPlot != NULL){
+          }
+      }
+
   }
-*/
+
+
 }
 
 void
 SpectrumDisplayWidget::ToggleTabConstellation(const bool state)
 {
-/*
-  if(state == true) {
-    if(d_plot_constellation == -1) {
-      SpectrumTypeTab->addTab(ConstellationPage, "Constellation Display");
-      d_plot_constellation = SpectrumTypeTab->count()-1;
-    }
+  if (_showForm) {
+      if(state == true) {
+        if(d_plot_constellation == -1) {
+          SpectrumTypeTab->addTab(ConstellationPage, "Constellation Display");
+          d_plot_constellation = SpectrumTypeTab->count()-1;
+        }
+      }
+      else {
+        SpectrumTypeTab->removeTab(SpectrumTypeTab->indexOf(ConstellationPage));
+        d_plot_constellation = -1;
+      }
   }
-  else {
-    SpectrumTypeTab->removeTab(SpectrumTypeTab->indexOf(ConstellationPage));
-    d_plot_constellation = -1;
+  else
+  {
+      if((state == true) && _constellationDisplayPlot == NULL){
+        _constellationDisplayPlot = new ConstellationDisplayPlot(this);
+        connect(_constellationDisplayPlot, SIGNAL(plotPointSelected(const QPointF)), this, SLOT(onConstPlotPointSelected(const QPointF)));
+        d_plot_constellation = 1;
+        TabChanged(0);
+      }
+      else if (state == false)
+      {
+          d_plot_constellation = -1;
+          if (_constellationDisplayPlot != NULL){
+              delete _constellationDisplayPlot;
+              _constellationDisplayPlot = NULL;
+          }
+      }
   }
-*/
+
 }
 
 
 void
 SpectrumDisplayWidget::SetTimeDomainAxis(double min, double max)
 {
-  //_timeDomainDisplayPlot->set_yaxis(min, max);
+  if (_timeDomainDisplayPlot != NULL)
+    _timeDomainDisplayPlot->set_yaxis(min, max);
 }
 
 void
 SpectrumDisplayWidget::SetConstellationAxis(double xmin, double xmax,
 						double ymin, double ymax)
 {
-  //_constellationDisplayPlot->set_axis(xmin, xmax, ymin, ymax);
+  if (_constellationDisplayPlot != NULL)
+    _constellationDisplayPlot->set_axis(xmin, xmax, ymin, ymax);
 }
 
 void
 SpectrumDisplayWidget::SetConstellationPenSize(int size)
 {
-  //_constellationDisplayPlot->set_pen_size( size );
+  if (_constellationDisplayPlot != NULL)
+    _constellationDisplayPlot->set_pen_size( size );
 }
 
 void
 SpectrumDisplayWidget::SetFrequencyAxis(double min, double max)
 {
-  _frequencyDisplayPlot->set_yaxis(min, max);
+  if (_frequencyDisplayPlot != NULL)
+    _frequencyDisplayPlot->set_yaxis(min, max);
 }
 
 void
@@ -729,22 +847,25 @@ SpectrumDisplayWidget::SetUpdateTime(double t)
 }
 
 //MJC
-void
-SpectrumDisplayWidget::SetTraceColour (QColor c)
-{
-  _frequencyDisplayPlot->SetTraceColour(c);
-}
-
 void 
-SpectrumDisplayWidget::SetBGColour (QColor c)
+SpectrumDisplayWidget::setPlotItemColor (int item, QColor c)
 {
-  _frequencyDisplayPlot->SetBGColour(c);
+    //fprintf(stderr,"setPlotItemColor %d\n", item);
+    switch (item) {
+    case FrequencyBackgroundColor:
+        if (_frequencyDisplayPlot != NULL) _frequencyDisplayPlot->SetBGColour(c);
+        break;
+    case FrequencyPowerCurveColor:
+        if (_frequencyDisplayPlot != NULL) _frequencyDisplayPlot->SetTraceColour(c);
+        break;
+    }
 }
 
 void
 SpectrumDisplayWidget::ShowCFMarker (bool show)
 {
-  _frequencyDisplayPlot->ShowCFMarker(show);
+  if (_frequencyDisplayPlot != NULL)
+    _frequencyDisplayPlot->ShowCFMarker(show);
 }
 
 void 
@@ -755,7 +876,27 @@ SpectrumDisplayWidget::SetUseRFFrequencies (bool userff)
 }
 
 void
-SpectrumDisplayWidget::onPlotPointSelected(const QPointF p)
+SpectrumDisplayWidget::onFFTPlotPointSelected(const QPointF p)
 {
-    emit plotPointSelected(p);
+    emit plotPointSelected(p, 1);
 }
+
+void
+SpectrumDisplayWidget::onWFallPlotPointSelected(const QPointF p)
+{
+    emit plotPointSelected(p, 2);
+}
+
+void
+SpectrumDisplayWidget::onTimePlotPointSelected(const QPointF p)
+{
+    emit plotPointSelected(p, 3);
+}
+
+void
+SpectrumDisplayWidget::onConstPlotPointSelected(const QPointF p)
+{
+    emit plotPointSelected(p, 4);
+}
+
+

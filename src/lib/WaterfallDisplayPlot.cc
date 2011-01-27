@@ -250,15 +250,16 @@ WaterfallDisplayPlot::WaterfallDisplayPlot(QWidget* parent)
   colorMap.addColorStop(0.75, Qt::red);
 
   d_spectrogram->setColorMap(colorMap);
-  
+
   d_spectrogram->attach(this);
-  
+
   // LeftButton for the zooming
   // MidButton for the panning
   // RightButton: zoom out by 1
   // Ctrl+RighButton: zoom out to full size
   
   _zoomer = new WaterfallZoomer(canvas(), 0);
+  _zoomer->setSelectionFlags(QwtPicker::RectSelection | QwtPicker::DragSelection);
 #if QT_VERSION < 0x040000
   _zoomer->setMousePattern(QwtEventPattern::MouseSelect2,
 			   Qt::RightButton, Qt::ControlModifier);
@@ -272,6 +273,10 @@ WaterfallDisplayPlot::WaterfallDisplayPlot(QWidget* parent)
   _panner = new QwtPlotPanner(canvas());
   _panner->setAxisEnabled(QwtPlot::yRight, false);
   _panner->setMouseButton(Qt::MidButton);
+
+  // emit the position of clicks on widget
+  _picker = new QwtDblClickPlotPicker(canvas());
+  connect(_picker, SIGNAL(selected(const QwtDoublePoint &)), this, SLOT(OnPickerPointSelected(const QwtDoublePoint &)));
   
   // Avoid jumping when labels with more/less digits
   // appear/disappear when scrolling vertically
@@ -320,6 +325,8 @@ WaterfallDisplayPlot::SetFrequencyRange(const double constStartFreq,
   double startFreq = constStartFreq / units;
   double stopFreq = constStopFreq / units;
   double centerFreq = constCenterFreq / units;
+
+  _xAxisMultiplier = units;
 
   _useCenterFrequencyFlag = useCenterFrequencyFlag;
 
@@ -548,6 +555,15 @@ WaterfallDisplayPlot::_UpdateIntensityRangeDisplay()
 
   // Update the last replot timer
   _lastReplot = get_highres_clock();
+}
+
+void
+WaterfallDisplayPlot::OnPickerPointSelected(const QwtDoublePoint & p)
+{
+    QPointF point = p;
+    //fprintf(stderr,"OnPickerPointSelected %f %f %d\n", point.x(), point.y(), _xAxisMultiplier);
+    point.setX(point.x() * _xAxisMultiplier);
+    emit plotPointSelected(point);
 }
 
 #endif /* WATERFALL_DISPLAY_PLOT_C */
