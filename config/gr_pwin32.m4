@@ -1,6 +1,6 @@
 # Check for (mingw)win32 POSIX replacements.             -*- Autoconf -*-
 
-# Copyright 2003,2004,2005 Free Software Foundation, Inc.
+# Copyright 2003,2004,2005,2011 Free Software Foundation, Inc.
 # 
 # This file is part of GNU Radio
 # 
@@ -61,17 +61,6 @@ AC_TRY_LINK([   #include <windows.h>
                 AC_MSG_RESULT(no)
                 )
 
-dnl Under Win32, mkdir prototype in io.h has only one arg
-AC_MSG_CHECKING(whether mkdir accepts only one arg)
-AC_TRY_COMPILE([#include <sys/types.h>
-       #include <sys/stat.h>
-       #include <fcntl.h>], [
-       mkdir("")
- ], [ AC_MSG_RESULT(yes)
-     AC_DEFINE(MKDIR_TAKES_ONE_ARG,[],[Define if mkdir accepts only one arg]) ],
- [ AC_MSG_RESULT(no)
- ])
-
 AH_BOTTOM(
 [
 /* Define missing prototypes, implemented in replacement lib */
@@ -98,6 +87,9 @@ struct timespec {
 	time_t	tv_sec;
 	long	tv_nsec;
 };
+#endif
+#if HAVE_UNISTD_H
+#include <unistd.h>
 #endif
 static inline int nanosleep(const struct timespec *req, struct timespec *rem) { return usleep(req->tv_sec*1000000+req->tv_nsec/1000); }
 #endif

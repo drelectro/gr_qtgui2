@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 from gnuradio import gr
-from gnuradio.qtgui2 import qtgui2
+#from gnuradio.qtgui2 import qtgui2
+import qtgui2
 from PyQt4 import QtGui, QtCore
 import sys, sip
 

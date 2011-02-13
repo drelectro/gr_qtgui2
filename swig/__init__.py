@@ -1,5 +1,5 @@
 #
-# Copyright 2008 Free Software Foundation, Inc.
+# Copyright 2007,2008 Free Software Foundation, Inc.
 # 
 # This file is part of GNU Radio
 # 
@@ -19,7 +19,16 @@
 # Boston, MA 02110-1301, USA.
 # 
 
-SUBDIRS = lib
-#if PYTHON
-SUBDIRS += python
-#endif
+import glob
+import os.path
+
+# This automatically imports all top-level objects from .py files
+# in our directory into the package name space
+for _p in __path__:
+    _filenames = glob.glob (os.path.join (_p, "*.py"))
+    for _f in _filenames:
+        _f = os.path.basename(_f).lower()
+        _f = _f[:-3]
+        if _f == '__init__':
+            continue
+        exec "from %s import *" % (_f,)

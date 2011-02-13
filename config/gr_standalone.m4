@@ -1,5 +1,5 @@
 dnl
-dnl Copyright 2008,2009 Free Software Foundation, Inc.
+dnl Copyright 2008,2009,2010 Free Software Foundation, Inc.
 dnl 
 dnl This file is part of GNU Radio
 dnl 
@@ -30,12 +30,6 @@ m4_define([GR_STANDALONE],
 [
   AC_CONFIG_SRCDIR([config/gr_standalone.m4])
   AM_CONFIG_HEADER(config.h)
-
-  AC_CANONICAL_BUILD
-  AC_CANONICAL_HOST
-  AC_CANONICAL_TARGET
-
-  AM_INIT_AUTOMAKE
 
   dnl Remember if the user explicity set CXXFLAGS
   if test -n "${CXXFLAGS}"; then
@@ -116,4 +110,50 @@ m4_define([GR_STANDALONE],
 
   PKG_CHECK_MODULES(GNURADIO_CORE, gnuradio-core >= 3)
   LIBS="$LIBS $GNURADIO_CORE_LIBS"
+
+  gnuradio_core_GUILE_LOAD_PATH="`pkg-config --variable=guile_load_path gnuradio-core`"
+  gnuradio_core_LIBDIRPATH="`pkg-config --variable=libdir gnuradio-core`"
+  AC_SUBST(gnuradio_core_GUILE_LOAD_PATH)
+  AC_SUBST(gnuradio_core_LIBDIRPATH)
+
+  dnl Allow user to choose whether to generate SWIG/Python 
+  dnl Default is enabled
+  AC_ARG_ENABLE([python],
+    [AS_HELP_STRING([--enable-python],
+      [generate SWIG/Python components (default is yes)])],
+    [case "${enableval}" in
+       yes) enable_python=yes ;;
+       no) enable_python=no ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-python]) ;;
+     esac],
+    [enable_python=yes]  
+  )
+  AM_CONDITIONAL([PYTHON], [test x$enable_python = xyes])
+
+  dnl Allow user to choose whether to generate SWIG/Guile
+  dnl Default is disabled
+  AC_ARG_ENABLE([guile],
+    [AS_HELP_STRING([--enable-guile],
+      [generate SWIG/Guile components (default is no)])],
+    [case "${enableval}" in
+       yes) enable_guile=yes ;;
+       no) enable_guile=no ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-guile]) ;;
+     esac],
+    [enable_guile=no]
+  )
+  AM_CONDITIONAL([GUILE], [test x$enable_guile = xyes])
+
+  dnl see if GUILE is installed
+  if test x${enable_guile} == xyes; then
+    AC_PATH_PROG(GUILE,guile)
+  fi
+
+  dnl Define where to look for cppunit includes and libs
+  dnl sets CPPUNIT_CFLAGS and CPPUNIT_LIBS
+  dnl Try using pkg-config first, then fall back to cppunit-config.
+  PKG_CHECK_EXISTS(cppunit,
+    [PKG_CHECK_MODULES(CPPUNIT, cppunit >= 1.9.14)],
+    [AM_PATH_CPPUNIT([1.9.14],[],
+		     [AC_MSG_ERROR([GNU Radio requires cppunit.  Stop])])])
 ])

@@ -21,10 +21,27 @@
 
 include $(top_srcdir)/Makefile.common
 
-#/usr/include/qwt-qt4/qwt_plot.h
+AM_CPPFLAGS += $(QT_INCLUDES) -I. $(WITH_INCLUDES)
 
-AM_CPPFLAGS = $(STD_DEFINES_AND_INCLUDES) $(PYTHON_CPPFLAGS) \
-              $(QT_INCLUDES) -I. $(WITH_INCLUDES)
+# list of programs run by "make check" and "make distcheck"
+#TESTS = test_all
+
+# C/C++ headers get installed in ${prefix}/include/$(modname)
+modinclude_HEADERS = 			\
+	FrequencyDisplayPlot.h		\
+	TimeDomainDisplayPlot.h		\
+	WaterfallDisplayPlot.h		\
+	waterfallGlobalData.h		\
+	ConstellationDisplayPlot.h	\
+	highResTimeFunctions.h		\
+	plot_waterfall.h			\
+	spectrumdisplaywidget.h		\
+	SpectrumGUIClass.h			\
+	spectrumUpdateEvents.h		\
+        qtgui_util.h            \
+	qtgui2.h					\
+	qtgui2_sink_c.h				\
+	qtgui2_sink_f.h
 
 # Only include these files in the build if qtgui passes configure checks
 # This is mostly to help make distcheck pass
@@ -35,12 +52,12 @@ QMAKE_SOURCES = 					\
 	FrequencyDisplayPlot.moc.cc	 	\
 	TimeDomainDisplayPlot.moc.cc	\
 	WaterfallDisplayPlot.moc.cc		\
-	ConstellationDisplayPlot.moc.cc	\	
+	ConstellationDisplayPlot.moc.cc	\
 	spectrumdisplayform.ui.h
 
 EXTRA_DIST = spectrumdisplayform.ui
 
-BUILT_SOURCES = $(QMAKE_SOURCES)
+BUILT_SOURCES += $(QMAKE_SOURCES)
 
 # Build the normal library for C++ apps to link against
 lib_LTLIBRARIES = libgnuradio-qtgui2.la
@@ -52,32 +69,17 @@ libgnuradio_qtgui2_la_SOURCES = 	\
 	WaterfallDisplayPlot.cc			\
 	waterfallGlobalData.cc			\
 	ConstellationDisplayPlot.cc		\
-	spectrumdisplaywidget.cc			\
+	spectrumdisplaywidget.cc		\
 	SpectrumGUIClass.cc				\
 	spectrumUpdateEvents.cc			\
 	plot_waterfall.cc				\
-        qtgui_util.cc                           \
+    qtgui_util.cc               	\
 	qtgui2_sink_c.cc				\
 	qtgui2_sink_f.cc
 
 nodist_libgnuradio_qtgui2_la_SOURCES=$(BUILT_SOURCES)
 
-# These headers get installed in ${prefix}/include/gnuradio
-grinclude_HEADERS =				\
-	FrequencyDisplayPlot.h		\
-	TimeDomainDisplayPlot.h		\
-	WaterfallDisplayPlot.h		\
-	waterfallGlobalData.h		\
-	ConstellationDisplayPlot.h	\
-	highResTimeFunctions.h		\
-	plot_waterfall.h			\
-	spectrumdisplaywidget.h		\
-	SpectrumGUIClass.h			\
-	spectrumUpdateEvents.h		\
-        qtgui_util.h                    \
-	qtgui2.h					\
-	qtgui2_sink_c.h				\
-	qtgui2_sink_f.h
+
 
 QT_MOC_FLAGS = -DQT_SHARED -DQT_NO_DEBUG -DQT_OPENGL_LIB -DQT_GUI_LIB -DQT_CORE_LIB
 %.moc.cc : %.h
@@ -94,30 +96,6 @@ libgnuradio_qtgui2_la_LIBADD = 		\
 	-lstdc++		\
 	$(QT_LIBS)
 
-#if PYTHON
-##############################
-# SWIG interface and library
-
-TOP_SWIG_IFILES = 		\
-	qtgui2.i
-
-# Install so that they end up available as:
-#   import gnuradio.qtgui2
-# This ends up at:
-#   ${prefix}/lib/python${python_version}/site-packages/gnuradio
-qtgui2_pythondir_category =	\
-	gnuradio/qtgui2
-
-# additional libraries for linking with the SWIG-generated library
-qtgui2_la_swig_libadd =		\
-	libgnuradio-qtgui2.la
-
-include $(top_srcdir)/Makefile.swig
-
-# add some of the variables generated inside the Makefile.swig.gen
-BUILT_SOURCES += 		\
-	$(swig_built_sources)
-#endif
 
 # Do not distribute built sources, they may contain generated paths
 # which are invalid on other systems

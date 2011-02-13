@@ -3,9 +3,6 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
-/* Define if has std::isnan */
-#undef CXX_HAS_STD_ISNAN
-
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
@@ -99,9 +96,6 @@
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
 #undef LT_OBJDIR
-
-/* Define if mkdir accepts only one arg */
-#undef MKDIR_TAKES_ONE_ARG
 
 /* Name of package */
 #undef PACKAGE
@@ -214,6 +208,9 @@ struct timespec {
 	time_t	tv_sec;
 	long	tv_nsec;
 };
+#endif
+#if HAVE_UNISTD_H
+#include <unistd.h>
 #endif
 static inline int nanosleep(const struct timespec *req, struct timespec *rem) { return usleep(req->tv_sec*1000000+req->tv_nsec/1000); }
 #endif

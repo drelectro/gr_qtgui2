@@ -1,5 +1,5 @@
 #
-# Copyright 2001 Free Software Foundation, Inc.
+# Copyright 2001,2010 Free Software Foundation, Inc.
 # 
 # This file is part of GNU Radio
 # 
@@ -49,7 +49,9 @@ m4macros = \
 	gr_check_usrp.m4 \
 	gr_doxygen.m4 \
 	gr_fortran.m4 \
+	gr_git.m4 \
 	gr_gprof.m4 \
+	gr_guile.m4 \
 	gr_lib64.m4 \
 	gr_libgnuradio_core_extra_ldflags.m4 \
 	gr_no_undefined.m4 \
@@ -63,6 +65,7 @@ m4macros = \
 	gr_subversion.m4 \
 	gr_swig.m4 \
 	gr_sysv_shm.m4 \
+	gr_version.m4 \
 	lf_cc.m4 \
 	lf_cxx.m4 \
 	lf_warnings.m4 \
@@ -78,4 +81,4 @@ m4macros = \
 # Don't install m4 macros anymore
 # m4data_DATA = $(m4macros) 
 
-EXTRA_DIST = $(m4macros) 
+EXTRA_DIST = $(m4macros)

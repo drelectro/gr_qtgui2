@@ -32,7 +32,12 @@ noinst_PYTHON = 		\
 EXTRA_DIST = \
 	qt_digital_window.ui
 
-qtgui2pythondir = $(grpythondir)/qtgui2
+#qtgui2pythondir = $(grpythondir)/qtgui2
 
-qtgui2python_PYTHON = 			\
+#qtgui2python_PYTHON = 			\
+#	__init__.py
+
+modpython= $(grpythondir)/qtgui2
+
+modpython_PYTHON = \
 	__init__.py
